@@ -303,8 +303,6 @@ class FileStorage( StorageBase ):
              Failed dict {path : error message }
     """
 
-    gLogger.notice( "Hello FileStorage!" )
-
     res = checkArgumentFormat( path )
     if not res['OK']:
       return res
