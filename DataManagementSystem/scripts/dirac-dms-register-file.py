@@ -82,7 +82,6 @@ dm = DataManager()
 
 gLogger.notice( 'Hello world!' )
 
-
 # change this to check whether file exists on disk
 for lfn in lfns:
   if not os.path.exists( lfn['localfile'] ):
@@ -97,6 +96,7 @@ for lfn in lfns:
 # change this to just register file
   gLogger.notice( "\nUploading %s" % lfn['lfn'] )
   res = dm.justRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
+  gLogger.notice( res )
   if not res['OK']:
     exitCode = 3
     gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )
