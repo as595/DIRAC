@@ -16,10 +16,10 @@ import os
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '\nUsage:',
-                                     '  %s [option|cfgfile] ... LFN Path SE [GUID]' % Script.scriptName,
+                                     '  %s [option|cfgfile] ... LFN SE [GUID]' % Script.scriptName,
                                      '\nArguments:',
                                      '  LFN:      Logical File Name',
-                                     '  Path:     Local path to the file',
+#                                     '  Path:     Local path to the file',
                                      '  SE:       DIRAC Storage Element',
                                      '  GUID:     GUID to use in the registration (optional)' ,
                                      '',
@@ -78,30 +78,19 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 #from DIRAC import gLogger
 import DIRAC
 exitCode = 0
+
 dm = DataManager()
 
-gLogger.notice( 'Hello world!' )
-
-# change this to check whether file exists on disk
 for lfn in lfns:
-  if not os.path.exists( lfn['localfile'] ):
-    gLogger.error( "File %s must exist locally" % lfn['localfile'] )
-    exitCode = 1
-    continue
-  if not os.path.isfile( lfn['localfile'] ):
-    gLogger.error( "%s is not a file" % lfn['localfile'] )
-    exitCode = 2
-    continue
-
-# change this to just register file
+  # register file:
   gLogger.notice( "\nUploading %s" % lfn['lfn'] )
   res = dm.existsAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
   gLogger.notice( res )
   if not res['OK']:
     exitCode = 3
-    gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )
+    gLogger.error( 'Error: failed to register %s on %s' % ( lfn['lfn'], lfn['SE'] ) )
     continue
   else:
-    gLogger.notice( 'Successfully uploaded file to %s' % lfn['SE'] )
+    gLogger.notice( 'Successfully registered file on %s' % lfn['SE'] )
 
 DIRAC.exit( exitCode )

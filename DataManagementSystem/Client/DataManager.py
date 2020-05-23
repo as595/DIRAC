@@ -500,18 +500,8 @@ class DataManager(object):
 
     successful = {}
     failed = {}
-    ##########################################################
-    #  Check that the file exists on the storage element.
 
-    SEName = storageElement.storageElementName()
-    gLogger.notice( SEName )
-    res = returnSingleResult(storageElement.getURL(lfn, protocol=self.registrationProtocol))
-    gLogger.notice( res )
-    fileURL = res['Value']
-    res = returnSingleResult(storageElement.exists('/skatelescope.eu/user/a/anna.scaife/diracdev/testfile'))
-    gLogger.notice( res )
-    stop
-
+    #########################################################
     # check that the destination filecatalog exists:
     res = self.fileCatalog.exists({lfn: guid})
     if not res['OK']:
@@ -547,16 +537,23 @@ class DataManager(object):
 
 
     ##########################################################
-    # Check that the local file exists
-    if not os.path.exists(fileName):
-      errStr = "Supplied file does not exist."
-      log.debug(errStr, fileName)
+    # Check that the file exists on the storage element.
+
+    SEName = storageElement.storageElementName()
+    res = returnSingleResult(storageElement.exists(lfn))
+    if not res['OK']:
+      errStr = "File does not exist on storage element."
+      log.debug(errStr, lfn)
       return S_ERROR(errStr)
-    # If the path is not provided then use the LFN path
-    if not path:
-      path = os.path.dirname(lfn)
+
+
     # Obtain the size of the local file
-    size = getSize(fileName)
+    fileURL = storageElement.getURL(
+        lfn, protocol=self.registrationProtocol))
+    size = getSize(fileURL)
+    gLogger.notice( size )
+    stop
+
     if size == 0:
       errStr = "Supplied file is zero size."
       log.debug(errStr, fileName)
