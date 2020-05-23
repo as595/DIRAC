@@ -550,6 +550,8 @@ class DataManager(object):
     #fileURL = storageElement.getURL(lfn, protocol=self.registrationProtocol)
     size = storageElement.getFileSize(lfn)
     gLogger.notice( size )
+    size = getSize(fileName)
+    gLogger.notice( size )
     stop
 
     if size == 0:
