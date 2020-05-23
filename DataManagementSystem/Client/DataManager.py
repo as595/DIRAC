@@ -462,6 +462,173 @@ class DataManager(object):
 
     return sortedSEs
 
+
+  def justRegister(self, lfn, fileName, diracSE, guid=None, path=None,
+                     checksum=None, overwrite=False):
+    """ Put a local file to a Storage Element and register in the File Catalogues
+
+        'lfn' is the file LFN
+        'file' is the full path to the local file
+        'diracSE' is the Storage Element to which to put the file
+        'guid' is the guid with which the file is to be registered (if not provided will be generated)
+        'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
+        'overwrite' removes file from the file catalogue and SE before attempting upload
+    """
+
+    while True:
+        errStr = "Hello world 2"
+        return S_ERROR(errStr)
+
+    res = self.__hasAccess('addFile', lfn)
+    if not res['OK']:
+      return res
+    log = self.log.getSubLogger('putAndRegister')
+    if lfn not in res['Value']['Successful']:
+      errStr = "Write access not permitted for this credential."
+      log.debug(errStr, lfn)
+      return S_ERROR(errStr)
+
+    # Check that the local file exists
+    if not os.path.exists(fileName):
+      errStr = "Supplied file does not exist."
+      log.debug(errStr, fileName)
+      return S_ERROR(errStr)
+    # If the path is not provided then use the LFN path
+    if not path:
+      path = os.path.dirname(lfn)
+    # Obtain the size of the local file
+    size = getSize(fileName)
+    if size == 0:
+      errStr = "Supplied file is zero size."
+      log.debug(errStr, fileName)
+      return S_ERROR(errStr)
+    # If the GUID is not given, generate it here
+    if not guid:
+      guid = makeGuid(fileName)
+    if not checksum:
+      log.debug("Checksum information not provided. Calculating adler32.")
+      checksum = fileAdler(fileName)
+      # Make another try
+      if not checksum:
+        log.debug("Checksum calculation failed, try again")
+        checksum = fileAdler(fileName)
+      if checksum:
+        log.debug("Checksum calculated to be %s." % checksum)
+      else:
+        return S_ERROR(DErrno.EBADCKS, "Unable to calculate checksum")
+
+    res = self.fileCatalog.exists({lfn: guid})
+    if not res['OK']:
+      errStr = "Completely failed to determine existence of destination LFN."
+      log.debug(errStr, lfn)
+      return res
+    if lfn not in res['Value']['Successful']:
+      errStr = "Failed to determine existence of destination LFN."
+      log.debug(errStr, lfn)
+      return S_ERROR(errStr)
+    if res['Value']['Successful'][lfn]:
+      if res['Value']['Successful'][lfn] == lfn:
+        if overwrite:
+          resRm = self.removeFile(lfn, force=True)
+          if not resRm['OK']:
+            errStr = "Failed to prepare file for overwrite"
+            log.debug(errStr, lfn)
+            return resRm
+          if lfn not in resRm['Value']['Successful']:
+            errStr = "Failed to either delete file or LFN"
+            log.debug(errStr, lfn)
+            return S_ERROR("%s %s" % (errStr, lfn))
+        else:
+          errStr = "The supplied LFN already exists in the File Catalog."
+          log.debug(errStr, lfn)
+          return S_ERROR("%s %s" % (errStr, res['Value']['Successful'][lfn]))
+      else:
+        # If the returned LFN is different, this is the name of a file
+        # with the same GUID
+        errStr = "This file GUID already exists for another file"
+        log.debug(errStr, res['Value']['Successful'][lfn])
+        return S_ERROR("%s %s" % (errStr, res['Value']['Successful'][lfn]))
+
+    ##########################################################
+    #  Instantiate the destination storage element here.
+    storageElement = StorageElement(diracSE, vo=self.voName)
+    res = storageElement.isValid()
+    if not res['OK']:
+      errStr = "The storage element is not currently valid."
+      log.verbose(errStr, "%s %s" % (diracSE, res['Message']))
+      return S_ERROR("%s %s" % (errStr, res['Message']))
+
+    fileDict = {lfn: fileName}
+
+    successful = {}
+    failed = {}
+    ##########################################################
+    #  Perform the put here.
+    oDataOperation = _initialiseAccountingObject('putAndRegister', diracSE, 1)
+    oDataOperation.setStartTime()
+    oDataOperation.setValueByKey('TransferSize', size)
+    startTime = time.time()
+    res = returnSingleResult(storageElement.putFile(fileDict))
+    putTime = time.time() - startTime
+    oDataOperation.setValueByKey('TransferTime', putTime)
+    if not res['OK']:
+
+      # We don't consider it a failure if the SE is not valid
+      if not DErrno.cmpError(res, errno.EACCES):
+        oDataOperation.setValueByKey('TransferOK', 0)
+        oDataOperation.setValueByKey('FinalStatus', 'Failed')
+        oDataOperation.setEndTime()
+        gDataStoreClient.addRegister(oDataOperation)
+        gDataStoreClient.commit()
+        startTime = time.time()
+        log.debug('putAndRegister: Sending accounting took %.1f seconds' %
+                  (time.time() - startTime))
+      errStr = "Failed to put file to Storage Element."
+      log.debug(errStr, "%s: %s" % (fileName, res['Message']))
+      return S_ERROR("%s %s" % (errStr, res['Message']))
+    successful[lfn] = {'put': putTime}
+
+    ###########################################################
+    # Perform the registration here
+    destinationSE = storageElement.storageElementName()
+    res = returnSingleResult(storageElement.getURL(
+        lfn, protocol=self.registrationProtocol))
+    if not res['OK']:
+      errStr = "Failed to generate destination PFN."
+      log.debug(errStr, res['Message'])
+      return S_ERROR("%s %s" % (errStr, res['Message']))
+    destUrl = res['Value']
+    oDataOperation.setValueByKey('RegistrationTotal', 1)
+
+    fileTuple = (lfn, destUrl, size, destinationSE, guid, checksum)
+    registerDict = {'LFN': lfn, 'PFN': destUrl, 'Size': size,
+                    'TargetSE': destinationSE, 'GUID': guid, 'Addler': checksum}
+    startTime = time.time()
+    res = self.registerFile(fileTuple)
+    registerTime = time.time() - startTime
+    oDataOperation.setValueByKey('RegistrationTime', registerTime)
+    if not res['OK']:
+      errStr = "Completely failed to register file."
+      log.debug(errStr, res['Message'])
+      failed[lfn] = {'register': registerDict}
+      oDataOperation.setValueByKey('FinalStatus', 'Failed')
+    elif lfn in res['Value']['Failed']:
+      errStr = "Failed to register file."
+      log.debug(errStr, "%s %s" % (lfn, res['Value']['Failed'][lfn]))
+      oDataOperation.setValueByKey('FinalStatus', 'Failed')
+      failed[lfn] = {'register': registerDict}
+    else:
+      successful[lfn]['register'] = registerTime
+      oDataOperation.setValueByKey('RegistrationOK', 1)
+    oDataOperation.setEndTime()
+    gDataStoreClient.addRegister(oDataOperation)
+    startTime = time.time()
+    gDataStoreClient.commit()
+    log.debug('Sending accounting took %.1f seconds' %
+              (time.time() - startTime))
+    return S_OK({'Successful': successful, 'Failed': failed})
+
+
   def putAndRegister(self, lfn, fileName, diracSE, guid=None, path=None,
                      checksum=None, overwrite=False):
     """ Put a local file to a Storage Element and register in the File Catalogues

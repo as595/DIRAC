@@ -2,7 +2,7 @@
 ########################################################################
 # $HeadURL$
 # File :    dirac-dms-add-file
-# Author :  Stuart Paterson
+# Author :  Anna Scaife
 ########################################################################
 """
   Upload a file to the grid storage and register it in the File Catalog
@@ -13,6 +13,7 @@ from DIRAC.Core.Base import Script
 from DIRAC import S_OK
 from DIRAC import gLogger
 import os
+
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '\nUsage:',
                                      '  %s [option|cfgfile] ... LFN Path SE [GUID]' % Script.scriptName,
@@ -32,8 +33,6 @@ Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '  lfn2 localfile2 SE [GUID2]'] )
                         )
 
-gLogger.notice( 'Hello world!' )
-stop
 
 overwrite = False
 def setOverwrite( arg ):
@@ -79,8 +78,12 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 #from DIRAC import gLogger
 import DIRAC
 exitCode = 0
-
 dm = DataManager()
+
+gLogger.notice( 'Hello world!' )
+
+
+# change this to check whether file exists on disk
 for lfn in lfns:
   if not os.path.exists( lfn['localfile'] ):
     gLogger.error( "File %s must exist locally" % lfn['localfile'] )
@@ -91,8 +94,9 @@ for lfn in lfns:
     exitCode = 2
     continue
 
+# change this to just register file
   gLogger.notice( "\nUploading %s" % lfn['lfn'] )
-  res = dm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
+  res = dm.justRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
   if not res['OK']:
     exitCode = 3
     gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )
