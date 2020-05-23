@@ -507,8 +507,9 @@ class DataManager(object):
     gLogger.notice( SEName )
     res = returnSingleResult(storageElement.getURL(lfn, protocol=self.registrationProtocol))
     gLogger.notice( res )
-
-    res = returnSingleResult(storageElement.exists(fileName))
+    fileURL = res['Value']
+    res = returnSingleResult(storageElement.exists(fileURL))
+    gLogger.notice( res )
     stop
 
     # check that the destination filecatalog exists:
@@ -574,32 +575,6 @@ class DataManager(object):
         log.debug("Checksum calculated to be %s." % checksum)
       else:
         return S_ERROR(DErrno.EBADCKS, "Unable to calculate checksum")
-
-    ##########################################################
-    #  Perform the put here.
-    oDataOperation = _initialiseAccountingObject('putAndRegister', diracSE, 1)
-    oDataOperation.setStartTime()
-    oDataOperation.setValueByKey('TransferSize', size)
-    startTime = time.time()
-    res = returnSingleResult(storageElement.putFile(fileDict))
-    putTime = time.time() - startTime
-    oDataOperation.setValueByKey('TransferTime', putTime)
-    if not res['OK']:
-
-      # We don't consider it a failure if the SE is not valid
-      if not DErrno.cmpError(res, errno.EACCES):
-        oDataOperation.setValueByKey('TransferOK', 0)
-        oDataOperation.setValueByKey('FinalStatus', 'Failed')
-        oDataOperation.setEndTime()
-        gDataStoreClient.addRegister(oDataOperation)
-        gDataStoreClient.commit()
-        startTime = time.time()
-        log.debug('putAndRegister: Sending accounting took %.1f seconds' %
-                  (time.time() - startTime))
-      errStr = "Failed to put file to Storage Element."
-      log.debug(errStr, "%s: %s" % (fileName, res['Message']))
-      return S_ERROR("%s %s" % (errStr, res['Message']))
-    successful[lfn] = {'put': putTime}
 
     ###########################################################
     # Perform the registration here
