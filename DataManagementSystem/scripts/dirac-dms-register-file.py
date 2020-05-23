@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 from DIRAC import S_OK
+from DIRAC import gLogger
 import os
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
                                      '\nUsage:',
@@ -75,7 +76,7 @@ else:
   lfns.append( getDict( args ) )
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC import gLogger
+#from DIRAC import gLogger
 import DIRAC
 exitCode = 0
 
