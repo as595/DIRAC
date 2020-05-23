@@ -547,20 +547,27 @@ class DataManager(object):
       return S_ERROR(errStr)
 
     # Obtain the size of the file on the SE
-    #fileURL = storageElement.getURL(lfn, protocol=self.registrationProtocol)
+    fileURL = storageElement.getURL(lfn, protocol=self.registrationProtocol)
     size = storageElement.getFileSize(lfn)
     gLogger.notice( size )
     size = getSize(fileName)
     gLogger.notice( size )
-    stop
 
     if size == 0:
       errStr = "Supplied file is zero size."
       log.debug(errStr, fileName)
       return S_ERROR(errStr)
+
+    gLogger.notice(makeGuid(fileName))
+    gLogger.notice(makeGuid(fileURL))
+    
     # If the GUID is not given, generate it here
     if not guid:
       guid = makeGuid(fileName)
+
+
+    stop
+
     if not checksum:
       log.debug("Checksum information not provided. Calculating adler32.")
       checksum = fileAdler(fileName)
