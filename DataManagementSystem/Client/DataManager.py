@@ -463,7 +463,7 @@ class DataManager(object):
     return sortedSEs
 
 
-  def justRegister(self, lfn, fileName, diracSE, guid=None, path=None,
+  def existsAndRegister(self, lfn, fileName, diracSE, guid=None, path=None,
                      checksum=None, overwrite=False):
     """ Put a local file to a Storage Element and register in the File Catalogues
 
@@ -475,48 +475,38 @@ class DataManager(object):
         'overwrite' removes file from the file catalogue and SE before attempting upload
     """
 
-    while True:
-        errStr = "Hello world 2"
-        return S_ERROR(errStr)
+    gLogger.notice( "Hello world 2" )
+    gLogger.notice( fileName )
 
     res = self.__hasAccess('addFile', lfn)
     if not res['OK']:
       return res
-    log = self.log.getSubLogger('putAndRegister')
+    log = self.log.getSubLogger('existsAndRegister')
     if lfn not in res['Value']['Successful']:
       errStr = "Write access not permitted for this credential."
       log.debug(errStr, lfn)
       return S_ERROR(errStr)
 
-    # Check that the local file exists
-    if not os.path.exists(fileName):
-      errStr = "Supplied file does not exist."
-      log.debug(errStr, fileName)
-      return S_ERROR(errStr)
-    # If the path is not provided then use the LFN path
-    if not path:
-      path = os.path.dirname(lfn)
-    # Obtain the size of the local file
-    size = getSize(fileName)
-    if size == 0:
-      errStr = "Supplied file is zero size."
-      log.debug(errStr, fileName)
-      return S_ERROR(errStr)
-    # If the GUID is not given, generate it here
-    if not guid:
-      guid = makeGuid(fileName)
-    if not checksum:
-      log.debug("Checksum information not provided. Calculating adler32.")
-      checksum = fileAdler(fileName)
-      # Make another try
-      if not checksum:
-        log.debug("Checksum calculation failed, try again")
-        checksum = fileAdler(fileName)
-      if checksum:
-        log.debug("Checksum calculated to be %s." % checksum)
-      else:
-        return S_ERROR(DErrno.EBADCKS, "Unable to calculate checksum")
+    ##########################################################
+    #  Instantiate the destination storage element here.
+    storageElement = StorageElement(diracSE, vo=self.voName)
+    res = storageElement.isValid()
+    if not res['OK']:
+      errStr = "The storage element is not currently valid."
+      log.verbose(errStr, "%s %s" % (diracSE, res['Message']))
+      return S_ERROR("%s %s" % (errStr, res['Message']))
 
+    fileDict = {lfn: fileName}
+
+    successful = {}
+    failed = {}
+    ##########################################################
+    #  Check that the file exists on the storage element.
+    res = returnSingleResult(se.exists(fileName))
+    gLogger.notice( res )
+    stop
+    
+    # check that the destination filecatalog exists:
     res = self.fileCatalog.exists({lfn: guid})
     if not res['OK']:
       errStr = "Completely failed to determine existence of destination LFN."
@@ -549,19 +539,37 @@ class DataManager(object):
         log.debug(errStr, res['Value']['Successful'][lfn])
         return S_ERROR("%s %s" % (errStr, res['Value']['Successful'][lfn]))
 
+
     ##########################################################
-    #  Instantiate the destination storage element here.
-    storageElement = StorageElement(diracSE, vo=self.voName)
-    res = storageElement.isValid()
-    if not res['OK']:
-      errStr = "The storage element is not currently valid."
-      log.verbose(errStr, "%s %s" % (diracSE, res['Message']))
-      return S_ERROR("%s %s" % (errStr, res['Message']))
+    # Check that the local file exists
+    if not os.path.exists(fileName):
+      errStr = "Supplied file does not exist."
+      log.debug(errStr, fileName)
+      return S_ERROR(errStr)
+    # If the path is not provided then use the LFN path
+    if not path:
+      path = os.path.dirname(lfn)
+    # Obtain the size of the local file
+    size = getSize(fileName)
+    if size == 0:
+      errStr = "Supplied file is zero size."
+      log.debug(errStr, fileName)
+      return S_ERROR(errStr)
+    # If the GUID is not given, generate it here
+    if not guid:
+      guid = makeGuid(fileName)
+    if not checksum:
+      log.debug("Checksum information not provided. Calculating adler32.")
+      checksum = fileAdler(fileName)
+      # Make another try
+      if not checksum:
+        log.debug("Checksum calculation failed, try again")
+        checksum = fileAdler(fileName)
+      if checksum:
+        log.debug("Checksum calculated to be %s." % checksum)
+      else:
+        return S_ERROR(DErrno.EBADCKS, "Unable to calculate checksum")
 
-    fileDict = {lfn: fileName}
-
-    successful = {}
-    failed = {}
     ##########################################################
     #  Perform the put here.
     oDataOperation = _initialiseAccountingObject('putAndRegister', diracSE, 1)
