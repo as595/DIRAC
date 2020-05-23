@@ -566,6 +566,8 @@ class GFAL2_StorageBase(StorageBase):
              S_ERROR in case of argument problems
     """
 
+    gLogger.notice( "Hello GFAL2_StorageBase!" )
+
     res = checkArgumentFormat(path)
     if not res['OK']:
       return res
