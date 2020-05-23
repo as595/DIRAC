@@ -524,10 +524,10 @@ class DataManager(object):
             errStr = "Failed to either delete file or LFN"
             log.debug(errStr, lfn)
             return S_ERROR("%s %s" % (errStr, lfn))
-        else:
-          errStr = "The supplied LFN already exists in the File Catalog."
-          log.debug(errStr, lfn)
-          return S_ERROR("%s %s" % (errStr, res['Value']['Successful'][lfn]))
+#        else:
+#          errStr = "The supplied LFN already exists in the File Catalog."
+#          log.debug(errStr, lfn)
+#          return S_ERROR("%s %s" % (errStr, res['Value']['Successful'][lfn]))
       else:
         # If the returned LFN is different, this is the name of a file
         # with the same GUID
