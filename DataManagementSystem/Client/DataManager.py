@@ -541,6 +541,8 @@ class DataManager(object):
 
     SEName = storageElement.storageElementName()
     res = returnSingleResult(storageElement.exists(lfn))
+    gLogger.notice( res )
+    stop
     if not res['OK']:
       errStr = "File does not exist on storage element."
       log.debug(errStr, lfn)
@@ -560,7 +562,7 @@ class DataManager(object):
 
     gLogger.notice(makeGuid(fileName))
     gLogger.notice(makeGuid(fileURL))
-    
+
     # If the GUID is not given, generate it here
     if not guid:
       guid = makeGuid(fileName)
