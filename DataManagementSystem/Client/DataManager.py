@@ -508,7 +508,7 @@ class DataManager(object):
     res = returnSingleResult(storageElement.getURL(lfn, protocol=self.registrationProtocol))
     gLogger.notice( res )
     fileURL = res['Value']
-    res = returnSingleResult(storageElement.exists(fileURL))
+    res = returnSingleResult(storageElement.exists('/skatelescope.eu/user/a/anna.scaife/diracdev/testfile'))
     gLogger.notice( res )
     stop
 
