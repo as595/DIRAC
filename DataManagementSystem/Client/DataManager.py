@@ -502,6 +502,12 @@ class DataManager(object):
     failed = {}
     ##########################################################
     #  Check that the file exists on the storage element.
+
+    if not guid:
+      guid = makeGuid(fileName)
+
+    gLogger.notice( guid )
+
     res = returnSingleResult(storageElement.exists(fileName))
     gLogger.notice( res )
     stop
