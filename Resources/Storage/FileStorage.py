@@ -237,7 +237,7 @@ class FileStorage( StorageBase ):
     try:
       statInfo = os.stat( path )
       metadataDict = {}
-  
+
       metadataDict['ModTime'] = statInfo.st_mtime
       metadataDict['Size'] = statInfo.st_size
       metadataDict['Mode'] = stat.S_IMODE( statInfo.st_mode )
@@ -302,6 +302,8 @@ class FileStorage( StorageBase ):
       :returns: Successful dict {path : size}
              Failed dict {path : error message }
     """
+
+    gLogger.notice( "Hello FileStorage!" )
 
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -408,7 +410,7 @@ class FileStorage( StorageBase ):
         dirName = os.path.basename( src_dir )
         dest_dir = "%s/%s" % ( localPath, dirName )
         successful[src_dir] = self.__copyDirectory( src_dir, dest_dir )
-      
+
       except OSError:
         failed[src_dir] = {'Files':0, 'Size':0}
 
@@ -533,7 +535,7 @@ class FileStorage( StorageBase ):
             successful[url] = True
           else:
             failed[url] = str( ose )
-          
+
 
 
     resDict = {'Failed':failed, 'Successful':successful}
@@ -573,12 +575,12 @@ class FileStorage( StorageBase ):
             files.append(lfnPath)
           else:
             dirs.append(lfnPath)
-        
+
         successful[url] = { 'SubDirs' : dirs, 'Files' : files}
       except OSError as ose:
         failed[url] = str( ose )
 
-        
+
 
     resDict = {'Failed':failed, 'Successful':successful}
     return S_OK( resDict )
@@ -622,7 +624,7 @@ class FileStorage( StorageBase ):
       :returns: list of successfull and failed dictionnary, both indexed by the path
 
                 * In the failed, the value is the error message
-                * In the successful the values are dictionnaries : 
+                * In the successful the values are dictionnaries :
 
                     * Files : amount of files in the directory
                     * Size : summed up size of files
@@ -656,7 +658,5 @@ class FileStorage( StorageBase ):
         successful[url] = { 'Files' : nbOfFiles, 'Size' : totSize, 'SubDirs' : nbOfSubDirs }
       except OSError as ose:
         failed[url] = str( ose )
-      
+
     return S_OK( { 'Failed' : failed, 'Successful' : successful } )
-
-
