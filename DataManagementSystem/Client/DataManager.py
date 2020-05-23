@@ -502,10 +502,10 @@ class DataManager(object):
     failed = {}
     ##########################################################
     #  Check that the file exists on the storage element.
-    res = returnSingleResult(se.exists(fileName))
+    res = returnSingleResult(storageElement.exists(fileName))
     gLogger.notice( res )
     stop
-    
+
     # check that the destination filecatalog exists:
     res = self.fileCatalog.exists({lfn: guid})
     if not res['OK']:
