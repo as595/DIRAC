@@ -505,6 +505,8 @@ class DataManager(object):
 
     SEName = storageElement.storageElementName()
     gLogger.notice( SEName )
+    res = returnSingleResult(storageElement.getURL(lfn, protocol=self.registrationProtocol))
+    gLogger.notice( res )
 
     res = returnSingleResult(storageElement.exists(fileName))
     stop
