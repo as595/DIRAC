@@ -95,7 +95,7 @@ for lfn in lfns:
 
 # change this to just register file
   gLogger.notice( "\nUploading %s" % lfn['lfn'] )
-  res = dm.justRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
+  res = dm.existsAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
   gLogger.notice( res )
   if not res['OK']:
     exitCode = 3
