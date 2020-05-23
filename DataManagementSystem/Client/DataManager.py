@@ -546,10 +546,9 @@ class DataManager(object):
       log.debug(errStr, lfn)
       return S_ERROR(errStr)
 
-
-    # Obtain the size of the local file
+    # Obtain the size of the file on the SE
     fileURL = storageElement.getURL(
-        lfn, protocol=self.registrationProtocol))
+        lfn, protocol=self.registrationProtocol)
     size = getSize(fileURL)
     gLogger.notice( size )
     stop
