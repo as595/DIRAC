@@ -547,9 +547,8 @@ class DataManager(object):
       return S_ERROR(errStr)
 
     # Obtain the size of the file on the SE
-    fileURL = storageElement.getURL(
-        lfn, protocol=self.registrationProtocol)
-    size = getSize(fileURL)
+    #fileURL = storageElement.getURL(lfn, protocol=self.registrationProtocol)
+    size = storageElement.getFileSize(lfn)
     gLogger.notice( size )
     stop
 
