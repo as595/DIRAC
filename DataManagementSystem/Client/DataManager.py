@@ -503,13 +503,10 @@ class DataManager(object):
     ##########################################################
     #  Check that the file exists on the storage element.
 
-    if not guid:
-      guid = makeGuid(fileName)
-
-    gLogger.notice( guid )
+    SEName = storageElement.storageElementName()
+    gLogger.notice( SEName )
 
     res = returnSingleResult(storageElement.exists(fileName))
-    gLogger.notice( res )
     stop
 
     # check that the destination filecatalog exists:
